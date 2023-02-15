@@ -1,0 +1,151 @@
+whjr-standard:
+  # Default values for kube.
+# Declare variables to be passed into your templates.
+
+  serviceName: "wfms-configuration-management"
+  nameOverride: "wfms-configuration-management"
+  vaultRole: wfms-configuration-management-role
+  helm: 115
+
+  datadogAnnotations:
+    ad.datadoghq.com/wfms-configuration-management.logs: '[{"source":"nodejs","service":"wfms-configuration-management"}]'
+
+  image:
+    repository: 823845340709.dkr.ecr.ap-south-1.amazonaws.com/wfms-configuration-management
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  healthCheckPath: "/wfms-configuration-management/healthcheck"
+
+  imagePullSecrets: []
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: false
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: "wfms-configuration-management-sa"
+
+  podSecurityContext:
+    {}
+    # fsGroup: 2000
+
+  securityContext:
+    {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 9017
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: wfms-configuration-management.local
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "2Gi"
+    requests:
+      cpu: "500m"
+      memory: "2Gi"
+
+
+  pdb:
+    enabled: true
+    maxUnavailable: 25%
+
+  terminationGracePeriodSeconds: 50
+
+  autoscaling:
+    stable:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 200
+      targetCPUUtilizationPercentage: 50
+      # targetMemoryUtilizationPercentage: 80
+    canary:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 200
+      targetCPUUtilizationPercentage: 50
+      # targetMemoryUtilizationPercentage: 80
+    release:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 200
+      targetCPUUtilizationPercentage: 50
+      # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: |
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: release
+                operator: In
+                values:
+                - {{ .Release.Name }}
+            topologyKey: kubernetes.io/hostname
+
+  traffic:
+    stable: 50
+    canary: 50
+
+  stableVersion: 48
+  canaryVersion: 49
+  previousCanaryVersion: 47
+  stableReleaseVersion: 48
+  currentReleaseVersion: 48
+  team: "platform"
+  vertical: "infra"
+  cname: apigateway
+  canaryDomainPrefix: pre
+  domains:
+    whjr:
+      dev: api.whjr.dev
+      stage: whjr.one
+      prod: whitehatjr.com
+    byfs:
+      dev: api.whjr.dev
+      stage: whjr.one
+      prod: byjusfutureschool.com
+
+  readinessProbe:
+    periodSeconds: 10
+    initialDelaySeconds: 45
+    successThreshold: 3
+    failureThreshold: 3
+    timeoutSeconds: 10
+  livenessProbe:
+    periodSeconds: 10
+    initialDelaySeconds: 10
+    failureThreshold: 30
+    timeoutSeconds: 10
+
+  envoyResources: {}

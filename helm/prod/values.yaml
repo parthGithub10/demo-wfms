@@ -1,0 +1,45 @@
+whjr-standard:
+  ddAgentHost: internal-apm.hp.byjus.onl:8126
+  pods:
+    - name: wfms-configuration-management-main
+      minReplicas: 2
+      maxReplicas: 10
+      ReuqestTimeout: 30s
+      routes:
+        - route: "/"
+  nodeSelector:
+    eks.amazonaws.com/nodegroup: h-prod-main-worker-managed-ng
+
+  env: "prod"
+  clusterName: "prod"
+  pathPrefix: ""
+  rollout:
+    revisionHistoryLimit: 1
+    buildVersion: 1
+    releaseVersion: 1
+    strategy:
+      canary:
+        maxSurge: "25%"
+        maxUnavailable: 0
+        steps: |
+          - setWeight: 5
+          - pause:
+              duration: 1m
+          - setWeight: 25
+          - pause:
+              duration: 1m
+          - setWeight: 50
+          - pause:
+              duration: 1m
+          - setWeight: 75
+          - pause:
+              duration: 1m
+
+  preStopCommand: "curl -XPUT $CONSUL_FAIL_HEALTH_CHECK_URL; PID=`pidof node` && kill -15 $PID && while ps -p $PID > /dev/null; do sleep 1; done;"
+  resources:
+    limits:
+      cpu: "512m"
+      memory: "1Gi"
+    requests:
+      cpu: "512m"
+      memory: "1Gi"
